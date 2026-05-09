@@ -601,7 +601,20 @@ header{
     <input type="text" id="srch" placeholder="Search plumber, tutor, cleaner..." oninput="renderW()">
     <button onclick="renderW()">🔍</button>
   </div>
-  <div class="loc-tag">📍 Serving <span>Shankarpally & nearby areas</span></div>
+  <div style="display:flex;gap:8px;align-items:center;animation:fadeUp 0.6s 0.5s ease both">
+    <div class="loc-tag">📍 Area:</div>
+    <select id="areaFilter" onchange="renderW()" style="background:rgba(16,24,50,0.8);border:1.5px solid var(--bdr);border-radius:8px;padding:5px 10px;font-family:'DM Sans',sans-serif;font-size:0.72rem;color:var(--gold);outline:none;cursor:pointer">
+      <option value="all">All Areas</option>
+      <option value="shankarpally" selected>Shankarpally</option>
+      <option value="hyderabad">Hyderabad</option>
+      <option value="visakhapatnam">Visakhapatnam</option>
+      <option value="vijayawada">Vijayawada</option>
+      <option value="warangal">Warangal</option>
+      <option value="karimnagar">Karimnagar</option>
+      <option value="nizamabad">Nizamabad</option>
+      <option value="other">Other</option>
+    </select>
+  </div>
 </div>
 
 <div class="cats">
@@ -666,8 +679,18 @@ header{
     <input type="tel" id="rgPhone" placeholder="9876543210" maxlength="10">
     <label>Your Skill / Trade</label>
     <select id="rgTrade"><option value="">Select your skill...</option></select>
-    <label>Your Area</label>
-    <input type="text" id="rgArea" placeholder="e.g. Shankarpally">
+    <label>Your City / Area</label>
+    <select id="rgAreaSelect" style="width:100%;padding:12px 14px;background:rgba(5,9,26,0.8);border:1.5px solid rgba(245,200,66,0.12);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:0.85rem;color:var(--text);outline:none;margin-bottom:8px" onchange="document.getElementById('rgArea').style.display=this.value==='other'?'block':'none'">
+      <option value="Shankarpally">Shankarpally</option>
+      <option value="Hyderabad">Hyderabad</option>
+      <option value="Visakhapatnam">Visakhapatnam</option>
+      <option value="Vijayawada">Vijayawada</option>
+      <option value="Warangal">Warangal</option>
+      <option value="Karimnagar">Karimnagar</option>
+      <option value="Nizamabad">Nizamabad</option>
+      <option value="other">Other (type below)</option>
+    </select>
+    <input type="text" id="rgArea" placeholder="Type your city/area" style="display:none">
     <label>Your Rate</label>
     <input type="text" id="rgRate" placeholder="e.g. ₹300/visit">
     <button class="mo-btn" id="rgBtn" onclick="submitReg()">✅ Submit Registration</button>
@@ -828,12 +851,21 @@ header{
   <div id="ts-sv" class="ts">
     <div class="sec-row" style="margin-bottom:12px"><div class="sec-t">Manage Services</div></div>
     <div class="af">
-      <p style="font-size:0.72rem;color:var(--muted);margin-bottom:12px;line-height:1.6">Add or remove service categories. These appear in the booking dropdown and category filters.</p>
+      <p style="font-size:0.72rem;color:var(--muted);margin-bottom:12px;line-height:1.6">Add or remove service categories.</p>
       <div class="svc-add-row">
         <input type="text" id="svcInput" placeholder="e.g. 🔧 Plumber" onkeydown="if(event.key==='Enter')addService()">
         <button class="svc-add-btn" onclick="addService()">+ Add</button>
       </div>
       <div id="svcList"></div>
+    </div>
+    <div class="sec-row" style="margin-bottom:12px;margin-top:16px"><div class="sec-t">Manage Cities</div></div>
+    <div class="af">
+      <p style="font-size:0.72rem;color:var(--muted);margin-bottom:12px;line-height:1.6">Add cities where LocalSeva operates. These appear in the area filter on home page.</p>
+      <div class="svc-add-row">
+        <input type="text" id="cityInput" placeholder="e.g. Hyderabad" onkeydown="if(event.key==='Enter')addCity()">
+        <button class="svc-add-btn" onclick="addCity()">+ Add</button>
+      </div>
+      <div id="cityList"></div>
     </div>
   </div>
 </div>
@@ -1085,16 +1117,34 @@ window.setCat = function(v, el) {
 // ══ RENDER WORKERS ══
 window.renderW = function() {
   const q = document.getElementById('srch').value.toLowerCase();
+  const areaEl = document.getElementById('areaFilter');
+  const selArea = areaEl ? areaEl.value : 'all';
   const list = allWorkers.filter(w => {
     const trade = (w.trade || '').toLowerCase();
     const tradeClean = trade.replace(/[^a-z]/g, '');
     const mc = curCat === 'all' || tradeClean.includes(curCat.replace(/[^a-z]/g,''));
     const mq = (w.name || '').toLowerCase().includes(q) || trade.includes(q);
-    return mc && mq;
+    const workerArea = (w.area || '').toLowerCase().replace(/\s/g,'');
+    const ma = selArea === 'all' || workerArea.includes(selArea) || selArea.includes(workerArea);
+    return mc && mq && ma;
   });
   const g = document.getElementById('wGrid');
+  const areaEl2 = document.getElementById('areaFilter');
+  const selArea2 = areaEl2 ? areaEl2.value : 'all';
   if (!list.length) {
-    g.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--muted);font-size:0.82rem">No workers found.</div>`;
+    if (selArea2 !== 'all') {
+      g.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:36px 20px">
+        <div style="font-size:2.5rem;margin-bottom:10px">📍</div>
+        <div style="font-family:'Syne',sans-serif;font-size:0.92rem;font-weight:700;margin-bottom:6px">Not Available Yet</div>
+        <div style="font-size:0.75rem;color:var(--muted);line-height:1.7">LocalSeva hasn't launched in this area yet.<br>We're expanding soon! 🚀</div>
+        <div style="margin-top:14px;font-size:0.72rem;color:var(--gold)">Want workers here? Contact us on WhatsApp</div>
+        <button onclick="window.open('https://wa.me/917680014318?text='+encodeURIComponent('Hi! I want LocalSeva in my area. Location: ${selArea2}'),'_blank')" style="margin-top:10px;background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:8px;padding:8px 18px;font-family:'Syne',sans-serif;font-size:0.75rem;font-weight:700;color:var(--navy);cursor:pointer">
+          📲 Request My Area
+        </button>
+      </div>`;
+    } else {
+      g.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--muted);font-size:0.82rem">No workers found.</div>`;
+    }
     return;
   }
   g.innerHTML = list.map((w, i) => {
@@ -1164,13 +1214,20 @@ window.submitBk = async function() {
       name: name,
       message: `Customer: ${name}\nPhone: ${phone}\nService: ${selWorker.trade}\nWorker: ${selWorker.name}\nProblem: ${desc||'—'}\nTime: ${time}`
     });
-    // WhatsApp to worker
+    // Owner gets WhatsApp FIRST (most important)
+    const ownerMsg = encodeURIComponent(
+      `🔔 New Booking Alert!\n\n👤 Customer: ${name}\n📞 Phone: ${phone}\n🛠️ Service: ${selWorker.trade}\n👷 Worker: ${selWorker.name}\n📝 Problem: ${desc||'—'}\n⏰ Time: ${time}`
+    );
+    window.open('https://wa.me/917680014318?text=' + ownerMsg, '_blank');
+    // Worker gets WhatsApp after 4 seconds
     const workerData = allWorkers.find(w => w.id === selWorker.id);
     if (workerData && workerData.phone) {
-      const workerMsg = encodeURIComponent(
-        `🔔 New Booking on LocalSeva!\n\n👤 Customer: ${name}\n📞 Phone: ${phone}\n🛠️ Service: ${selWorker.trade}\n📝 Problem: ${desc||'—'}\n⏰ Preferred Time: ${time}\n\n📞 Please call the customer soon!`
-      );
-      window.open('https://wa.me/91' + workerData.phone + '?text=' + workerMsg, '_blank');
+      setTimeout(() => {
+        const workerMsg = encodeURIComponent(
+          `🔔 New Booking on LocalSeva!\n\nHi ${selWorker.name}! You have a new booking.\n\n👤 Customer: ${name}\n📞 Phone: ${phone}\n🛠️ Service: ${selWorker.trade}\n📝 Problem: ${desc||'—'}\n⏰ Time: ${time}\n\n📞 Please call the customer and go help them!`
+        );
+        window.open('https://wa.me/91' + workerData.phone + '?text=' + workerMsg, '_blank');
+      }, 4000);
     }
     document.getElementById('bkName').value = '';
     document.getElementById('bkPhone').value = '';
@@ -1188,7 +1245,8 @@ window.submitReg = async function() {
   const name = document.getElementById('rgName').value.trim();
   const phone = document.getElementById('rgPhone').value.trim();
   const trade = document.getElementById('rgTrade').value;
-  const area = document.getElementById('rgArea').value.trim();
+  const areaSelect = document.getElementById('rgAreaSelect').value;
+  const area = areaSelect === 'other' ? document.getElementById('rgArea').value.trim() : areaSelect;
   const rate = document.getElementById('rgRate').value.trim();
   if (!name || !phone) { toast('⚠️ Fill name and phone', '#f97316'); return; }
   if (!/^\d{10}$/.test(phone)) { toast('⚠️ Enter valid 10-digit phone', '#f97316'); return; }
@@ -1212,9 +1270,9 @@ window.submitReg = async function() {
     });
     // WhatsApp to worker confirming registration
     const workerRegMsg = encodeURIComponent(
-      `✅ Welcome to LocalSeva!\n\nHi ${name}! Your registration has been received.\n\n🛠️ Trade: ${trade}\n📍 Area: ${area||'—'}\n💰 Rate: ${rate||'—'}\n\nWe will review and add you to the platform within 24 hours.\n\nThanks for joining LocalSeva! 🙏`
+      `✅ Welcome to LocalSeva!\n\nHi ${name}! Your registration has been received.\n\nname: ${name}\n phone: ${phone}\n 🛠️ Trade: ${trade}\n📍 Area: ${area||'—'}\n💰 Rate: ${rate||'—'}\n\nWe will review and add you to the platform within 24 hours.\n\nThanks for joining LocalSeva! 🙏`
     );
-    window.open('https://wa.me/91' + phone + '?text=' + workerRegMsg, '_blank');
+    window.open('https://wa.me/91' + 7680014318 + '?text=' + workerRegMsg, '_blank');
     document.getElementById('rgName').value = '';
     document.getElementById('rgPhone').value = '';
     document.getElementById('rgArea').value = '';
@@ -1369,6 +1427,69 @@ window.deleteWorker = async function(id) {
 };
 
 // ══ SERVICES MANAGEMENT ══
+// ══ CITY MANAGEMENT ══
+let cities = ['Shankarpally','Hyderabad','Visakhapatnam','Vijayawada','Warangal','Karimnagar','Nizamabad'];
+
+async function loadCities() {
+  try {
+    const docRef = doc(db, 'config', 'cities');
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      cities = snap.data().list || cities;
+    } else {
+      await setDoc(docRef, { list: cities });
+    }
+    updateAreaFilter();
+  } catch(e) {}
+}
+
+function updateAreaFilter() {
+  const sel = document.getElementById('areaFilter');
+  const rgSel = document.getElementById('rgAreaSelect');
+  if (sel) {
+    const cur = sel.value;
+    sel.innerHTML = '<option value="all">All Areas</option>' +
+      cities.map(c => `<option value="${c.toLowerCase()}">${c}</option>`).join('') ;
+    sel.value = cur || 'all';
+  }
+  if (rgSel) {
+    rgSel.innerHTML = cities.map(c => `<option value="${c}">${c}</option>`).join('') +
+      '<option value="other">Other (type below)</option>';
+  }
+}
+
+window.addCity = async function() {
+  const val = document.getElementById('cityInput').value.trim();
+  if (!val) return;
+  if (cities.includes(val)) { toast('⚠️ City already exists', '#f97316'); return; }
+  cities.push(val);
+  try {
+    await setDoc(doc(db, 'config', 'cities'), { list: cities });
+    renderCityList();
+    updateAreaFilter();
+    document.getElementById('cityInput').value = '';
+    toast('✅ City added', '#22c55e');
+  } catch(e) { toast('⚠️ Could not save', '#f97316'); }
+};
+
+window.removeCity = async function(idx) {
+  cities.splice(idx, 1);
+  try {
+    await setDoc(doc(db, 'config', 'cities'), { list: cities });
+    renderCityList();
+    updateAreaFilter();
+    toast('🗑️ City removed', '#6b7db3');
+  } catch(e) {}
+};
+
+function renderCityList() {
+  const el = document.getElementById('cityList');
+  if (!el) return;
+  el.innerHTML = cities.map((c, i) =>
+    `<div class="svc-chip">${c} <span class="svc-del" onclick="removeCity(${i})">✕</span></div>`
+  ).join('');
+}
+
 window.addService = async function() {
   const val = document.getElementById('svcInput').value.trim();
   if (!val) return;
@@ -1405,6 +1526,7 @@ function renderSvcList() {
 // ══ INIT ══
 initAuth();
 loadServices();
+loadCities();
 loadWorkers();
 
 // ══ PAGE NAV (global) ══
@@ -1437,7 +1559,7 @@ window.dTab = function(name, el) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
   document.getElementById('ts-' + name).classList.add('on');
   el.classList.add('on');
-  if (name === 'sv') renderSvcList();
+  if (name === 'sv') { renderSvcList(); renderCityList(); }
 };
 
 window.loadDashData = loadDashData;
